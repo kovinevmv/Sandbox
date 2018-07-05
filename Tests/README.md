@@ -29,8 +29,34 @@
 
 ### Примеры работы программы
 
-1) ![Пример №1](doc/example1.png)
+1) Пример №1
+```
+    a b c d
+    b d c
+    c e f
+    d f
+    f
+    e
+```
 
-2) ![Пример №2](doc/example2.png) 
+ ![Пример №1](doc/example1.png)
 
-3) ![Пример №3](doc/example3.png)
+2) Пример №2
+```
+	JVM JRE JAR
+	JRE JDE
+	JAR JVM
+	JDE JDK
+	JDK
+```
+
+ ![Пример №2](doc/example2.png) 
+
+3) Пример №3
+```
+    1 2
+	2 3	
+	3
+```
+
+  ![Пример №3](doc/example3.png)
