@@ -2,14 +2,13 @@
 
 function traverse() 
 {
-mypattern="*.jpg"
 for file in "$1"/*
 do
     if [ ! -d "${file}" ] ; 
 	then
 		if [[ "$file" =~ ".jpg" || "$file" =~ ".JPG" ]]; 
 		then
-			echo  "Found jpg     ---> ${file}"
+			echo  "Found jpg ---> ${file}"
 			jpegoptim --max 60 "${file}"
 		else
 			echo "Another type  ---> ${file}"
