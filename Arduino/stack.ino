@@ -2,6 +2,7 @@
 
 // For Arduino Uno
 // Perfect plays Stack with servo
+// How it works: https://www.youtube.com/watch?v=L_0f8ZT0rjk
 
 int upPosition   =  110;
 int downPosition = 135;
