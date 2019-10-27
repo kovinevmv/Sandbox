@@ -1,15 +1,16 @@
 #!/bin/bash
 # Parse valid MACs and check Intenet speed
 
-pip -v -q install speedtest-cli
-original_mac=`ifconfig | grep "ether*" | tr -d ' ' | tr -d '\t' | cut -c 6-22`
+#pip -v -q install speedtest-cli
+original_mac="7c:b0:c2:4f:b9:56"
 echo "$original_mac"
+wlan="wlp2s0"
 
 cat "$1" | while read mac
 do
-	ifconfig wlan0 down
-	macchanger --mac="${mac}" wlan0
-	ifconfig wlan0 up
+	ifconfig $wlan down
+	macchanger --mac="${mac}" $wlan
+	ifconfig $wlan up
 	service network-manager restart
 	sleep 30
 	ping -c 2 vk.com
@@ -28,7 +29,7 @@ do
 done
 
 ifconfig wlan0 down
-macchanger --mac="${original_mac}" wlan0
+macchanger --mac="${original_mac}" $wlan
 ifconfig wlan0 up
 service network-manager restart
 
