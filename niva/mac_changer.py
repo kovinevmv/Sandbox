@@ -3,7 +3,7 @@
 import re
 import subprocess
 
-default_interface = 'wlp2s0'
+from network import Network
 
 def execute(command):
     try:
@@ -14,25 +14,7 @@ def execute(command):
     except:
         return ''
     
-class Network:
-    def __init__(self, ESSID, password):
-        self._ESSID = ESSID
-        self._password = password
 
-    @property 
-    def password(self):
-        return self._password
-    
-    @property
-    def ESSID(self):
-        return self._ESSID
-
-    def serialize(self):
-        return {'ESSID': self._ESSID, 'password': self._password}
-
-    def __str__(self):
-        return 'Network(ESSID:"{}", password:"{}")'.format(self._ESSID, self._password)
-    
 
 class MacChanger:
     def __init__(self, interface_name=''):
@@ -61,7 +43,7 @@ class MacChanger:
             print("[+] Origin network is", network, ". No switching required")
         else:
             print('[+] Swithching to network: ', network)
-            execute("nmcli dev wifi connect \"{}\" password '{}'".format(network.ESSID, network.password))
+            execute("nmcli dev wifi connect \"{}\" password '{}'".format(network.network_name, network.password))
             print('[+] Switched')
 
 
