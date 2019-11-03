@@ -90,11 +90,16 @@ def write_task(task, path):
     task = task['solution']
     with open(path, 'w') as f:
         for row in task:
-            f.write(f"{row[0]} {row[1]}\n")
+            f.write(f"{row[0]} {row[1]}\n".encode().decode('cp1251'))
 
 
 path = 'course_id{}'.format(id)
 os.mkdir(path)
+
+with open(path + '/dump.json', 'w') as f:
+    f.write(json.dumps(main_json))
+
+
 for section in main_json:
     index_section, title_section = section['num'], section['title']
     os.mkdir(f"{path}/{index_section}. {title_section}")
@@ -106,8 +111,7 @@ for section in main_json:
                 write_task(task, f"{path}/{index_section}. {title_section}/{index_lesson}. {title_lesson}/{index_section}-{index_lesson}-{index_task}.txt")
 
 
-with open(path + '/dump.json', 'w') as f:
-    f.write(json.dumps(main_json))
+
 
 
 
