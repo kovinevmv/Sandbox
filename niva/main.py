@@ -1,8 +1,13 @@
 #!/usr/bin/python3.7
 
+from time import sleep
+
+
 from tools import *
 from mac_changer import *
-from time import sleep
+from network import Network
+from mac_stat import MacStatistic
+
 
 macs_file_path = '/home/alien/Desktop/git/Sandbox/Scripts/macs.txt'
 
@@ -12,13 +17,13 @@ niva_sv = Network('niva_sv', '9cVEr3Sda')
 changer = MacChanger()
 changer.initialize_connection(niva_sv)
 
-macs_statistic = read_file_in_yaml(macs_file_path)
-check_new_macs_in_yaml(macs_statistic)
-macs_statistic = sort(macs_statistic)
+
+macs_statistic = MacStatistic(macs_file_path)
+macs_statistic.sort()
 
 print('Starting "niva_sv" connection...')
 
-for mac, statistic in macs_statistic.items():
+for mac, statistic in macs_statistic.get_data().items():
     if mac != 'macs':
         changer.change_mac(mac)
         print('Wait reconnecting to network', end='')

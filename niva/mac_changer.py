@@ -2,6 +2,7 @@
 
 import re
 import subprocess
+
 from network import Network
 
 def execute(command):
@@ -13,6 +14,8 @@ def execute(command):
     except:
         return ''
     
+
+
 class MacChanger:
     def __init__(self, interface_name=''):
         self.set_interface(interface_name)
