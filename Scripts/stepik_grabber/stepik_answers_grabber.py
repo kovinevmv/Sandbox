@@ -2,117 +2,79 @@ import requests
 import re
 import json
 import os
+from stepik_api import StepikAPI
 
 
-with open('cookies.txt', 'r') as f: 
-    cookies_raw = json.loads(f.read())
-
-cookies = {}
-for cookie in cookies_raw:
-    cookies[cookie['name']] = cookie['value']
-    
-def parse_task(info, solution):
-    correct_submission = list(filter(lambda x : x['status'] == 'correct', solution['submissions']))
-    if not correct_submission:
-        return [('Not', 'solved')]
-    else:
-        answer = correct_submission[0]['reply']
-        result = []
-        if 'options' in info and 'choices' in answer:
-            text = info['options']
-            answer = answer['choices']
-            for variant, state in zip(text, answer):
-                symbol = '+' if state else '-'
-                result.append((symbol, variant))
-        elif 'pairs' in info and 'ordering' in answer:
-            text = info['pairs']
-            answer = answer['ordering']
-            for index, order in enumerate(answer):
-                result.append((text[index]['first'] + " :", text[order]['second']))
-        elif 'options' in info and 'ordering' in answer:
-            text = info['options']
-            answer = answer['ordering']
-            result = [(_ + 1, text[order]) for _, order in enumerate(answer)]
-        elif 'text' in answer:
-            result.append(('Answer:', answer['text']))
-
-    return result
-
-def save_json(data):
-    with open('temp.json', 'w', encoding='utf8') as f:
-        json.dump(data, f, ensure_ascii=False)
+course_id = '10524'
 
 
-id_user_solved_task = '19621617'
-url_stepik_course = '10524'
-stepik_api = 'https://stepik.org/api'
-id, url_stepik_course = parse_url(url_stepik_course);
-
-course_info = json.loads(requests.get('{}/courses/{}'.format(stepik_api, id)).text)
-sections = course_info['courses'][0]['sections']
-
-main_json = [None] * len(sections)
-
-for index_section, section in enumerate(sections):
-    print('Section: ', index_section, 'url:', '{}/sections/{}'.format(stepik_api, section))
-    section_info = json.loads(requests.get('{}/sections/{}'.format(stepik_api, section)).text)
-    title_section = section_info['sections'][0]['title']
-    units = section_info['sections'][0]['units']
-    print('Units of section ', index_section, ': ', units)
-    main_json[index_section] =  {'title': title_section, 'num': index_section + 1, 'content': [None] * len(units)}
-
-    for index_lesson, unit in enumerate(units):
-        unit_info = json.loads(requests.get('{}/units/{}'.format(stepik_api, unit)).text)
-        lesson = unit_info['units'][0]['lesson']
-        print('index_lesson: ', index_lesson, lesson,  'url:', '{}/units/{}'.format(stepik_api, unit))
-        
-        lesson_info = json.loads(requests.get('{}/lessons/{}'.format(stepik_api, lesson)).text)
-        print('index_lesson: ', lesson,  'url:', '{}/lessons/{}'.format(stepik_api, lesson))
-        
-        print(lesson_info['lessons'])
-        title_lesson = lesson_info['lessons'][0]['title']
-        steps = lesson_info['lessons'][0]['steps']
-        print('Steps of lessons', index_lesson, ":", steps)
-
-        main_json[index_section]['content'][index_lesson] = {'title': title_lesson, 'num': index_lesson + 1, 'content': [None] * len(steps)}
-
-        for index_step, step in enumerate(steps):
-            attempts = json.loads(requests.get('{}/attempts?step={}&user={}'.format(stepik_api, step, id_user_solved_task), cookies=cookies).text)
-            if (attempts['attempts']):
-                task_info = attempts['attempts'][0]['dataset']
-                solution = json.loads(requests.get('{}/submissions?&step={}&user={}'.format(stepik_api, step, id_user_solved_task), cookies=cookies).text)
-                
-                main_json[index_section]['content'][index_lesson]['content'][index_step] = {'solution': parse_task(task_info, solution)}
-            else:
-                main_json[index_section]['content'][index_lesson]['content'][index_step] = {'solution': [('Not', 'found attempts to solve')]}
-
-            save_json(main_json)
-
-def write_task(task, path):
-    task = task['solution']
-    with open(path, 'w') as f:
-        for row in task:
-            f.write(f"{row[0]} {row[1]}\n".encode().decode('cp1251'))
 
 
-path = 'course_id{}'.format(id)
+
+path = 'course_id{}'.format(course_id)
 os.mkdir(path)
 
-with open(path + '/dump.json', 'w') as f:
-    f.write(json.dumps(main_json))
+with open('dump.json', 'r') as f:
+    main_json = json.loads(f.read())
+
+def write_step(path, data):
+    with open(path, 'w') as f:
+        for d in data:
+            f.write(str(d[0]) + ' ' + str(d[1]) + '\n')
+
+for section_id, section_info in main_json.items():
+    title_section = section_info['title']
+    os.mkdir(f"{path}/{title_section}")
+    for unit in section_info['units']:
+        unit_title = list(unit.values())[0]['title']
+        os.mkdir(f"{path}/{title_section}/{unit_title}")
+        for step in list(unit.values())[0]['steps']:
+            print(step['num'], step['answer'])
+            write_step(f"{path}/{title_section}/{unit_title}/" + str(step['num']), step['answer'])
 
 
-for section in main_json:
-    index_section, title_section = section['num'], section['title']
-    os.mkdir(f"{path}/{index_section}. {title_section}")
-    for lesson in section['content']:
-        index_lesson, title_lesson = lesson['num'], lesson['title']
-        os.mkdir(f"{path}/{index_section}. {title_section}/{index_lesson}. {title_lesson}")
-        for index_task, task in enumerate(lesson['content'], start=1):
-            if task:
-                write_task(task, f"{path}/{index_section}. {title_section}/{index_lesson}. {title_lesson}/{index_section}-{index_lesson}-{index_task}.txt")
+c = StepikAPI(course=course_id)
 
+sections = c.get_sections_of_course()
+units = c.get_units_by_sections(sections)
 
+# Indexing titles of sections
+for index, section in enumerate(sections, start=1):
+    units[section]['title'] = '{}. {}'.format(index, units[section]['title'])
+
+main_json = units
+
+def dump_json(file, path):
+    with open(path, 'w') as f:
+        f.write(json.dumps(main_json))
+
+for section_id, unit_data in units.items():
+    lessons = c.get_lessons_from_units(unit_data['units'])
+    main_json[section_id]['units'] = lessons
+
+    steps = c.get_steps_from_lessons(lessons)
+    for lesson_id, lesson_info in steps.items():
+        index_of_l = main_json[section_id]['units'].index(lesson_id)
+        lesson_info['title'] = '{}. {}'.format(index_of_l + 1, lesson_info['title'])
+        lesson_info.update({'num': index_of_l + 1})
+        main_json[section_id]['units'][index_of_l] = {lesson_id: lesson_info}
+    
+    for lesson_id, lesson_data in steps.items():
+        steps_list = lesson_data['steps']
+        for i, el in enumerate(main_json[section_id]['units']):
+            if lesson_id in el.keys():
+                index_of_l = i
+                break
+        
+        main_json[section_id]['units'][index_of_l][lesson_id]['steps'] = []
+        for index_step, step in enumerate(steps_list):
+            print('Current step:', step)
+            attempts = c.get_attempts_of_step(step)
+            if attempts:
+                sub = c.get_submissions_of_step(step)
+                answer = c.convert_solution(attempts, sub)
+                main_json[section_id]['units'][index_of_l][lesson_id]['steps'].append({'num': '{}-{}-{}'.format(section_id, index_of_l, index_step), 'answer': answer})
+                dump_json(main_json, 'dump.json')
 
 
 

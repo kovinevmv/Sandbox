@@ -46,7 +46,7 @@ class StepikAPI:
         for unit in response['units']:
             lessons[unit['id']] = unit['lesson']
 
-        return units
+        return list(lessons.values())
     
     def get_steps_from_lessons(self, lessons):
         response = self._api_call_by_name('lessons', '?ids[]=' + ('&ids[]='.join([str(lesson) for lesson in lessons])))
@@ -58,13 +58,48 @@ class StepikAPI:
         return steps
 
     def get_attempts_of_step(self, step, user_id=None):
-        pass
-    
-    def get_submission_of_step(self, step, user_id=None):
-        pass
+        response = self._api_call_by_name('attempts', f'?step={step}&user={self.user_id}')
+        if response['attempts']:
+            return response['attempts'][0]['dataset']
+        else:
+            return []
 
-    def convert_solution(self, variants, solution):
-        pass
+    def get_submissions_of_step(self, step, user_id=None):
+        response = self._api_call_by_name('submissions', f'?step={step}&user={self.user_id}')
+        correct_sub = list(filter(lambda x : x['status'] == 'correct', response['submissions']))
+        if not correct_sub and 'meta' in response:
+            has_next = response['meta']['has_next']
+            page = 1
+            while has_next or not correct_sub:
+                response = self._api_call_by_name('submissions', f'?page={page}&step={step}&user={self.user_id}')
+                has_next = response['meta']['has_next']
+                correct_sub = list(filter(lambda x : x['status'] == 'correct', response['submissions']))
+                page += 1
+        return correct_sub
+
+
+    def convert_solution(self, info, solution):
+        answer = solution[0]['reply']
+        result = []
+        if 'options' in info and 'choices' in answer:
+            text = info['options']
+            answer = answer['choices']
+            for variant, state in zip(text, answer):
+                symbol = '+' if state else '-'
+                result.append((symbol, variant))
+        elif 'pairs' in info and 'ordering' in answer:
+            text = info['pairs']
+            answer = answer['ordering']
+            for index, order in enumerate(answer):
+                result.append((text[index]['first'] + " :", text[order]['second']))
+        elif 'options' in info and 'ordering' in answer:
+            text = info['options']
+            answer = answer['ordering']
+            result = [(_ + 1, text[order]) for _, order in enumerate(answer)]
+        elif 'text' in answer:
+            result.append(('Answer:', answer['text']))
+
+        return result
     
     def _parse_course_id(self, course):
         url = course
@@ -77,14 +112,3 @@ class StepikAPI:
 
         # else return input course is url
         return id, url
-
-
-c = StepikAPI(course='53334')
-sections = c.get_sections_of_course()
-print('Sections:', sections)
-units = c.get_units_by_sections(sections)
-print('Units:', units)
-lessons = c.get_lessons_from_units(units[sections[1]]['units'])
-print('Lessons:', lessons)
-steps = c.get_steps_from_lessons(lessons)
-print(steps)
