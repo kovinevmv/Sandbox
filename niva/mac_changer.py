@@ -2,8 +2,7 @@
 
 import re
 import subprocess
-
-default_interface = 'wlp2s0'
+from network import Network
 
 def execute(command):
     try:
@@ -14,26 +13,6 @@ def execute(command):
     except:
         return ''
     
-class Network:
-    def __init__(self, ESSID, password):
-        self._ESSID = ESSID
-        self._password = password
-
-    @property 
-    def password(self):
-        return self._password
-    
-    @property
-    def ESSID(self):
-        return self._ESSID
-
-    def serialize(self):
-        return {'ESSID': self._ESSID, 'password': self._password}
-
-    def __str__(self):
-        return 'Network(ESSID:"{}", password:"{}")'.format(self._ESSID, self._password)
-    
-
 class MacChanger:
     def __init__(self, interface_name=''):
         self.set_interface(interface_name)
@@ -47,21 +26,21 @@ class MacChanger:
         self.switch_to_new_network(self.origin_network)
 
     def save_current_wifi(self):
-        ESSID = execute('nmcli -t -f NAME connection show --active')
+        network_name = execute('nmcli -t -f NAME connection show --active')
         regex = re.compile(r'(.*?)(?: [\d]+)?$')
-        ESSID_without_end_num = re.findall(regex, ESSID)[0]
+        network_name_without_end_num = re.findall(regex, network_name)[0]
 
-        password = execute(r'cat "/etc/NetworkManager/system-connections/' + ESSID_without_end_num + r'" | grep -iPo "psk=\K(.*)"')
-        self.origin_network = Network(ESSID_without_end_num, password)
+        password = execute(r'cat "/etc/NetworkManager/system-connections/' + network_name_without_end_num + r'" | grep -iPo "psk=\K(.*)"')
+        self.origin_network = Network(network_name_without_end_num, password)
         print('Origin network saved:', self.origin_network)
 
 
     def switch_to_new_network(self, network):
-        if self.origin_network and self.origin_network.serialize() == network.serialize:
+        if self.origin_network and self.origin_network == network:
             print("[+] Origin network is", network, ". No switching required")
         else:
             print('[+] Swithching to network: ', network)
-            execute("nmcli dev wifi connect \"{}\" password '{}'".format(network.ESSID, network.password))
+            execute("nmcli dev wifi connect \"{}\" password '{}'".format(network.network_name, network.password))
             print('[+] Switched')
 
 
@@ -74,8 +53,6 @@ class MacChanger:
         execute('service network-manager restart')
         print('[+] Changed')
         execute('sleep 15')
-
-
 
     def set_interface(self, interface):
         if interface:
