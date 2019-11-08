@@ -1,12 +1,14 @@
 import re
 import requests
 import json
+import os
 
 stepic_api_url = 'https://stepik.org/api'
 
 my_stepic_id = '19621617'
-client_id = '4zjhKkRt1atYA23lPsxULmZU0qKb6jPDdMpVInei'
-client_secret = 'DamSVzsMdjK8JDCnbgR23gxbmRKNuQKeecvrHOWGFHc3kNJXBieBbzcbgwi4mAPM4lDgPgKukVjQAl1dMMODZutbsYDYwQW9HwpXoyazsl5jDAfAUrMDXObTqbqIBTWG'
+client_id = ''
+client_secret = ''
+
 
 class StepikAPI:
     def __init__(self, course, user_id=my_stepic_id):
@@ -97,7 +99,10 @@ class StepikAPI:
             answer = answer['ordering']
             result = [(_ + 1, text[order]) for _, order in enumerate(answer)]
         elif 'text' in answer:
-            result.append(('Answer:', answer['text']))
+            result.append((None, answer['text']))
+        elif 'answer' in answer:
+            result.append((None, answer['answer']))
+
 
         return result
     
@@ -112,3 +117,40 @@ class StepikAPI:
 
         # else return input course is url
         return id, url
+
+
+    def _write_step(self, path, data):
+        with open(path, 'w') as f:
+            for d in data:
+                if d[0]:
+                    f.write(str(d[0]) + ' ' + str(d[1]) + '\n')
+                else:
+                    f.write(str(d[1]) + '\n')
+
+
+    def dump_course(self, main_json):
+        path = 'course_id{}'.format(self.course_id)
+        os.mkdir(path)
+
+
+        for section_id, section_info in main_json.items():
+            title_section = section_info['title']
+            os.mkdir(f"{path}/{title_section}")
+            for unit in section_info['units']:
+                unit_title = list(unit.values())[0]['title'].replace('/', '|')
+                os.mkdir(f"{path}/{title_section}/{unit_title}")
+                for step in list(unit.values())[0]['steps']:
+                    if step['answer']:
+                        self._write_step(f"{path}/{title_section}/{unit_title}/" + str(step['num']) + '.txt', step['answer'])
+
+
+
+def dump_json(json_, path):
+    with open(path, 'w') as f:
+        f.write(json.dumps(json_, ensure_ascii=False))
+
+
+def read_json(path):
+    with open(path, 'r') as f:
+        json_ = json.loads(f.read())
+    return json_
