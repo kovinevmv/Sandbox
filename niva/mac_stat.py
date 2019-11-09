@@ -6,6 +6,7 @@ def datatime_to_str(data):
 
 
 
+# TODO replace duplicate reg
 class MacStatistic:
     def __init__(self, path):
         self.path = path
@@ -24,10 +25,10 @@ class MacStatistic:
             f.write(yaml.dump(data))
 
     def _create_new_mac_stat(self, mac):
-        return {mac: {'success_attemps_count': 0, 
-                      'last_access': datatime_to_str(datetime.datetime(2019, 10, 20, 0, 0, 1)), 
-                      'total_attempts_count': 0, 
-                      'speed': []}}
+        return {'success_attemps_count': 0, 
+                'last_access': datatime_to_str(datetime.datetime(2019, 10, 20, 0, 0, 1)), 
+                'total_attempts_count': 0, 
+                'speed': []}
 
     def _check_new_macs_in_yaml(self, data=''):
         if not data:
@@ -49,3 +50,16 @@ class MacStatistic:
     def get_data(self):
         return self.data
 
+    def failure(self, mac):
+        self.data[mac] =  {'success_attemps_count': self.data[mac]['success_attemps_count'], 
+                                'last_access': self.data[mac]['last_access'], 
+                                'total_attempts_count': self.data[mac]['total_attempts_count'] + 1, 
+                                'speed': self.data[mac]['speed']}
+        self.write()
+
+    def success(self, mac):
+        self.data[mac] =  {'success_attemps_count': self.data[mac]['success_attemps_count'] + 1, 
+                                'last_access': datatime_to_str(datetime.datetime.now()), 
+                                'total_attempts_count': self.data[mac]['total_attempts_count'] + 1, 
+                                'speed': self.data[mac]['speed']}
+        self.write()

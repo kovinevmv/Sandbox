@@ -33,8 +33,10 @@ for mac, statistic in macs_statistic.get_data().items():
         r = is_niva_verification_required()
         print('\nInternet access:', is_internet_access(), 'niva:', r)
         if not r:
+            macs_statistic.success(mac)
             print('Find')
             break
+        macs_statistic.failure(mac)
 
 #TODO remove very old
 
