@@ -1,5 +1,12 @@
 __pycache__
 .idea
 
-
+# Venv python
 env/
+
+# Word dicts
+ru_small.bin
+ru_small.bin.spell
+
+# Dump macs
+macs.txt
