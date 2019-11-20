@@ -1,18 +1,24 @@
-import requests, string, re, jamspell, sys, os
+import requests, string, re, sys, os
 from nltk.tokenize import word_tokenize
+from pyaspeller import Word
 from text_extractor import *
 from utils import parse_cookies
 
 DICT_PATH = '/home/alien/Desktop/git/Sandbox/Scripts/spell_checker/ru_small.bin'
 russian_chars = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
 
+parsed_cookies = parse_cookies()
+
+punctuation_re = re.compile(f'[{re.escape(string.punctuation)}]')
+digits_re = re.compile(r'\d+')
+no_words_re = re.compile(r'\W+')
 
 class TextProcessor:
     def __init__(self, url, type_extraction='raw', type_='web'):
-        self.punctuation_re = re.compile(f'[{re.escape(string.punctuation)}]')
-        self.digits_re = re.compile(r'\d+')
-        self.no_words_re = re.compile(r'\W+')
-        self.cookies = parse_cookies()
+        self.punctuation_re = punctuation_re
+        self.digits_re = digits_re
+        self.no_words_re = no_words_re
+        self.cookies = parsed_cookies
 
         self.file_type = type_
 
@@ -20,7 +26,6 @@ class TextProcessor:
         self.content = self.get_content(self.url, self.file_type)
         self.words = self.extract_text_from_html(self.content, type_extraction)
         self.russian_words = self.extract_russian_words(self.words)
-
     
     def get_content(self, link, type_):
         if type_ == 'web':
@@ -57,14 +62,11 @@ class TextProcessor:
         if not words:
             words = self.russian_words
         
-        corrector = jamspell.TSpellCorrector()
-        corrector.LoadLangModel(DICT_PATH)
-
         detected_errors = []
         for word in words:
-            correct = corrector.FixFragment(word)
-            if correct != word:
-                detected_errors.append((word, correct))
+            check = Word(word)
+            if not check.correct:
+                detected_errors.append((word, ', '.join(check.variants)))
 
         return detected_errors
                 
