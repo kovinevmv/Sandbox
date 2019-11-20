@@ -1,24 +1,34 @@
-import requests, string, re, jamspell 
+import requests, string, re, jamspell, sys, os
 from nltk.tokenize import word_tokenize
 from text_extractor import *
+from utils import parse_cookies
 
 DICT_PATH = '/home/alien/Desktop/git/Sandbox/Scripts/spell_checker/ru_small.bin'
 russian_chars = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
 
+
 class TextProcessor:
-    def __init__(self, url, type_extraction='raw'):
+    def __init__(self, url, type_extraction='raw', type_='web'):
         self.punctuation_re = re.compile(f'[{re.escape(string.punctuation)}]')
         self.digits_re = re.compile(r'\d+')
         self.no_words_re = re.compile(r'\W+')
+        self.cookies = parse_cookies()
+
+        self.file_type = type_
 
         self.url = url
-        self.content = self.get_html(self.url)
+        self.content = self.get_content(self.url, self.file_type)
         self.words = self.extract_text_from_html(self.content, type_extraction)
         self.russian_words = self.extract_russian_words(self.words)
 
     
-    def get_html(self, url):
-        return requests.get(url).text
+    def get_content(self, link, type_):
+        if type_ == 'web':
+            return requests.get(link, cookies=self.cookies).text
+        if type_ == 'dir':
+            with open(link, 'r', errors='ignore') as f:
+                output = f.read()
+            return output
 
     def extract_text_from_html(self, page, type_extraction):
         if type_extraction == 'bs4':
@@ -61,10 +71,3 @@ class TextProcessor:
     def get_words(self):
         return self.russian_words
 
-
-example_url = 'https://github.com/SqrtMinusOne/conspect/blob/master/src/%D0%A1%D0%B5%D0%BC_7/%D0%91%D0%96%D0%94/conspect.tex'
-
-t = TextProcessor(example_url, type_extraction='all')
-errors = t.validate_words()
-for (word, correct) in errors:
-    print(f"'{word}' --- fix ---> '{correct}'")
