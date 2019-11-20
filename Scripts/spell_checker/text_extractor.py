@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import html2text
 
 class BS4_HTMLToTextConverter:
-    def __init__(self, html, escaped_tags=['style', 'script', 'head', 'title', 'meta', '[document]']):
+    def __init__(self, html, escaped_tags=['style', 'script']):
         self.html = html
         self.escaped_tags = escaped_tags
         self.text = self._html_to_text(self.html)
@@ -31,5 +31,17 @@ class html2text_HTMLToTextConverter:
     def _html_to_text(self, page):
         return html2text.html2text(page)
    
+    def get_text(self):
+        return self.text
+
+
+class raw_HTMLToTextConverter:
+    def __init__(self, html):
+        self.html = html
+        self.text = self._html_to_text(self.html)
+
+    def _html_to_text(self, page):
+        return page
+
     def get_text(self):
         return self.text
