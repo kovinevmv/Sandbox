@@ -8,5 +8,6 @@ env/
 ru_small.bin
 ru_small.bin.spell
 
+mypython/
 # Dump macs
 macs.txt
