@@ -2,7 +2,7 @@ __pycache__
 .idea
 
 # Venv python
-env/
+venv/
 
 # Word dicts
 ru_small.bin
@@ -11,3 +11,4 @@ ru_small.bin.spell
 mypython/
 # Dump macs
 macs.txt
+*.png
