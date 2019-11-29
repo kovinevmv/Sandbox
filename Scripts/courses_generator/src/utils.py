@@ -30,11 +30,18 @@ def get_random_task():
     task = Task(response=task_raw)
     return task
 
-def get_random_image():
+def get_random_image_path():
     path = config.images_path
     images = os.listdir(path)
 
     return f"{path}/{images[random.randint(0, len(images) - 1)]}"
+
+def get_random_image_uploaded():
+    path = config.images_json_path
+    with open(path, 'r') as f:
+        data = json.loads(f.read())
+    return data[random.randint(0, len(data) - 1)]
+
 
 
 def get_random_subsection_full(index, type_):
@@ -102,19 +109,11 @@ def get_random_structure(course_id):
 
 
 def get_random_text_form():
-    content_elements = random.randint(1, 10)
-    
-    from course_api import CourseApi
-    from user import User
-        
-    u = User(config.cm_login, config.cm_password)
-    course_api = CourseApi(u)
-
+    content_elements = random.randint(*config.content_elements)
     text = ''
     for i in range(content_elements):
         if random.choice([True, False]):
-            image = course_api.upload_file(get_random_image())
-            image_url = image['url']
+            image_url = get_random_image_uploaded()['url']
 
             text += f'<figure class=\"image image-style-align-center\"><img src=\"{image_url}\"><figcaption>{get_random_sentence()}</figcaption></figure><p>&nbsp;</p>'
 

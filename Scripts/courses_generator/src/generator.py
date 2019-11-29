@@ -32,23 +32,43 @@ def generate_images():
 
     print('Generating images: ', end='')
     
-    url = "https://placekitten.com/{}/{}/"
+    url = "https://loremflickr.com/320/{}"
     
-    for i in range(40):
+    for i in range(100):
 
         print('.', end='', sep='', flush=True)
         try:
-            img = random.randint(200, 400)
-            response = requests.get(url.format(img, img), stream=True, timeout=5)
+            img_size = random.randint(200, 400)
+            response = requests.get(url.format(img_size), stream=True, timeout=5)
             c = response.content
         except:
             continue
         with open(f'{path}/{i}.png', 'wb') as f:
-            for block in response.iter_content(1024):
-                if not block:
-                    break
-                f.write(block)
+                f.write(response.content)
     print()
 
-generate_images()
-generate_tasks()   
+
+
+
+def upload_images():
+    from course_api import CourseApi
+    from user import User
+        
+    u = User(config.cm_login, config.cm_password)
+    course_api = CourseApi(u)
+
+    json_path = config.images_json_path
+    path = config.images_path
+    images = os.listdir(path)
+
+    images_list = []
+    for image in images:
+        resp = course_api.upload_file(path + '/' + image)
+        images_list.append(resp)
+        with open(json_path, 'w') as f:
+            f.write(json.dumps(images_list))
+
+
+#generate_images()
+#generate_tasks()   
+upload_images()
