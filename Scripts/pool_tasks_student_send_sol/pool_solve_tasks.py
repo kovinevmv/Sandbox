@@ -1,6 +1,9 @@
 from multiprocessing import Pool
 from urllib.parse import unquote, quote
-import requests, re, json
+
+import json
+import re
+import requests
 
 COOKIES_PATH = './cookies'
 URL = 'http://local.gazprom-classes.etu.ru:70/api/education/courses/tests/1/progress'
@@ -12,18 +15,21 @@ with open(COOKIES_PATH) as f:
         cookies_parsed = pair.split('=')
         cookies[cookies_parsed[0]] = cookies_parsed[1]
 
+
 def get_user_solutions():
     solutions = []
     for cookie_name, cookie_value in cookies.items():
         if 'test' in cookie_name:
             res = re.findall("test_\d+_(\d+)_(\w+)", cookie_name)[0]
-            solutions.append((int(res[0])-1, res[1], unquote(cookie_value)[1:-1]))
+            solutions.append((int(res[0]) - 1, res[1], unquote(cookie_value)[1:-1]))
     return solutions
+
 
 def get_tasks_exclude_task(task, tasks):
     index = tasks.index(task)
-    return tasks[:index] + tasks[index + 1 :]
-    
+    return tasks[:index] + tasks[index + 1:]
+
+
 def generate_tasks(task):
     generated = []
     if task[1] == 'text':
@@ -34,14 +40,13 @@ def generate_tasks(task):
 
 def generate_solutions(solution):
     generated = []
-    
+
     for task in solution:
         other_tasks = get_tasks_exclude_task(task, solution)
         new_tasks = generate_tasks(task)
         for new_task in new_tasks:
             generated.append(other_tasks + [new_task])
     return generated
-       
 
 
 def generate_cookie_by_sol(solution):
@@ -53,6 +58,7 @@ def generate_cookie_by_sol(solution):
                 if task[0] == index:
                     current_cookies[cookie_name] = quote('[' + task[2] + ']')
     return current_cookies
+
 
 def generate_data_by_sol(solution):
     data = []
@@ -75,19 +81,23 @@ def call_request(i):
     print(i, 'Response:', res)
     print()
 
+
 def send_request(cookie, data):
-    return requests.put(URL, cookies=cookie, data=data, headers={'content-type':'application/json;charset=UTF-8'}).text
+    return requests.put(URL, cookies=cookie, data=data, headers={'content-type': 'application/json;charset=UTF-8'}).text
+
 
 solutions = generate_solutions(get_user_solutions())
+
 
 def call_parallel():
     p = Pool(len(solutions))
     p.map(call_request, range(len(solutions)))
+
 
 def call_sequence():
     for i in range(len(solutions)):
         call_request(i)
 
 
-#call_parallel()
+# call_parallel()
 call_sequence()

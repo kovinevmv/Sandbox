@@ -1,7 +1,9 @@
-import requests, json, random
 from multiprocessing import Pool
 
-path_users = '/home/venom/Desktop/git/gp-classes-backend/users.csv'
+import json
+import requests
+
+path_users = '/home/alien/Desktop/git/gp-classes-backend/users.csv'
 
 
 def read_users():
@@ -21,10 +23,12 @@ def auth(user):
     login, password = user[0], user[1]
     data = {'login': login, 'password': password, 'saveMe': False}
     s = requests.Session()
-    resp = s.post('http://local.gazprom-classes.etu.ru:70/api/auth/login', data=json.dumps(data), headers={'Content-Type': 'application/json;charset=UTF-8'})
+    resp = s.post('http://local.gazprom-classes.etu.ru:70/api/auth/login', data=json.dumps(data),
+                  headers={'Content-Type': 'application/json;charset=UTF-8'})
     print('Resp:', resp.text)
-    
+
     return s
+
 
 def admission(session):
     course_url = 'http://local.gazprom-classes.etu.ru:70/api/education/courses/1/start'
@@ -35,23 +39,24 @@ def admission(session):
 
 
 def start_test(session):
-    s_link = 'http://local.gazprom-classes.etu.ru:70/api/education/courses/tests/1/start'
+    s_link = 'http://local.gazprom-classes.etu.ru:70/api/education/courses/1/tests/1/start'
     print('Start to course:', s_link)
     resp = session.post(s_link)
     print('Resp:', resp.text)
 
+
 def submit(session):
-    link = 'http://local.gazprom-classes.etu.ru:70/api/education/courses/tests/1/progress'
+    link = 'http://local.gazprom-classes.etu.ru:70/api/education/courses/1/tests/1/progress'
 
-    data = {"test":[{"id":2,"answer":[1]},{"id":3,"answer":[2]},{"id":1,"answer":[1]},{"id":4,"answer":[2]}]}
+    data = {"test": [{"id": 6, "answer": None}, {"id": 5, "answer": None}, {"id": 4, "answer": ["Object001"]},
+                     {"id": 3, "answer": [4]}, {"id": 1, "answer": "\\imath -19 \\Longleftarrow -40 \\star -98 "},
+                     {"id": 7, "answer": ["Object001"]}, {"id": 2,
+                                                          "answer": "-1 \\measuredangle \\ast \\succnsim \\psi \\longmapsto \\geqslant 49 \\propto \\Psi \\ntrianglelefteq \\ddagger 88 "}]}
 
-    cookies_task = {'test_1_3_text': "%5B1%5D", "test_1_4_text": "%5B2%5D", "test_1_2_text" : "%5B1%5D", "ebook1": "5", "test_1_5_text": "%5B2%5D"}
-    for cookie_name, cookie_vakue in cookies_task.items():
-        session.cookies[cookie_name] = cookie_vakue
-    
     print('Submit asnwer:', json.dumps(data))
-    resp = session.put(link, data=json.dumps(data), headers={'Content-Type':'application/json;charset=UTF-8'})
+    resp = session.put(link, data=json.dumps(data), headers={'Content-Type': 'application/json;charset=UTF-8'})
     print('Resp: ', resp.text)
+
 
 def solve(s):
     submit(s)
@@ -68,6 +73,3 @@ for user in users:
 
 p = Pool(len(ss))
 p.map(solve, ss)
-
-
-
