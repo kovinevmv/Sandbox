@@ -39,7 +39,6 @@ def progress_test(session):
     resp = session.put(
         f'http://local.gazprom-classes.etu.ru:70/api/education/courses/{COURSE_ID}/tests/{TEST_ID}/progress',
         data=json.dumps(payload))
-    print(resp.request.body)
 
     print('Progress:', resp, resp.text[:LEN_MESSAGE] + '...')
 
