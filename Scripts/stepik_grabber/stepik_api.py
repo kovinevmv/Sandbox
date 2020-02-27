@@ -5,6 +5,7 @@ import os
 
 stepic_api_url = 'https://stepik.org/api'
 
+# Copy from https://stepik.org/oauth2/applications/
 my_stepic_id = '19621617'
 client_id = ''
 client_secret = ''
