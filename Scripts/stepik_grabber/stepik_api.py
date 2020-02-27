@@ -75,8 +75,11 @@ class StepikAPI:
             page = 1
             while has_next or not correct_sub:
                 response = self._api_call_by_name('submissions', f'?page={page}&step={step}&user={self.user_id}')
-                has_next = response['meta']['has_next']
-                correct_sub = list(filter(lambda x : x['status'] == 'correct', response['submissions']))
+                try:
+                    has_next = response['meta']['has_next']
+                    correct_sub = list(filter(lambda x : x['status'] == 'correct', response['submissions']))
+                except:
+                    return [{'reply': ''}]
                 page += 1
         return correct_sub
 
@@ -103,7 +106,8 @@ class StepikAPI:
             result.append((None, answer['text']))
         elif 'answer' in answer:
             result.append((None, answer['answer']))
-
+        elif not answer:
+            result.append((None, "Not solved yet"))
 
         return result
     
