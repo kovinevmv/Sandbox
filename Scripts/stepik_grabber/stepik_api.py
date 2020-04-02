@@ -66,7 +66,7 @@ class StepikAPI:
         if response['attempts']:
             return response['attempts'][0]['dataset']
         else:
-            return []
+            return None
 
     def get_submissions_of_step(self, step, user_id=None):
         response = self._api_call_by_name('submissions', f'?step={step}&user={self.user_id}')
@@ -78,14 +78,16 @@ class StepikAPI:
                 response = self._api_call_by_name('submissions', f'?page={page}&step={step}&user={self.user_id}')
                 try:
                     has_next = response['meta']['has_next']
-                    correct_sub = list(filter(lambda x : x['status'] == 'correct', response['submissions']))
+                    correct_sub += list(filter(lambda x: x['status'] == 'correct', response['submissions']))
                 except:
                     return [{'reply': ''}]
                 page += 1
-        return correct_sub
-
+        return sorted(correct_sub, key=lambda x: x['time'], reverse=True)
 
     def convert_solution(self, info, solution):
+        if not solution or solution == [{'reply': ''}]:
+            return
+
         answer = solution[0]['reply']
         result = []
         if 'options' in info and 'choices' in answer:
@@ -107,6 +109,8 @@ class StepikAPI:
             result.append((None, answer['text']))
         elif 'answer' in answer:
             result.append((None, answer['answer']))
+        elif 'code' in answer:
+            result.append((None, answer['code']))
         elif not answer:
             result.append((None, "Not solved yet"))
 
