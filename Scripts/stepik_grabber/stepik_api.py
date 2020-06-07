@@ -20,8 +20,8 @@ class StepikAPI:
     def authrorize(self):
         auth = requests.auth.HTTPBasicAuth(client_id, client_secret)
         resp = requests.post('https://stepik.org/oauth2/token/',
-                     data={'grant_type': 'client_credentials'},
-                     auth=auth)
+                             data={'grant_type': 'client_credentials'},
+                             auth=auth)
         self.token = json.loads(resp.text)["access_token"]
         self.headers = {'Authorization': 'Bearer ' + self.token}
 
@@ -33,16 +33,17 @@ class StepikAPI:
 
     def get_sections_of_course(self):
         return self._api_call_by_name('courses/', self.course_id)['courses'][0]['sections']
-    
+
     def get_units_by_sections(self, sections):
-        response = self._api_call_by_name('sections', '?ids[]=' + ('&ids[]='.join([str(section) for section in sections])))
+        response = self._api_call_by_name('sections',
+                                          '?ids[]=' + ('&ids[]='.join([str(section) for section in sections])))
         units = {}
         for section in response['sections']:
-            units[section['id']] = {'title': section['title'], 
+            units[section['id']] = {'title': section['title'],
                                     'units': section['units']}
 
         return units
-    
+
     def get_lessons_from_units(self, units):
         response = self._api_call_by_name('units', '?ids[]=' + ('&ids[]='.join([str(unit) for unit in units])))
         lessons = {}
@@ -50,12 +51,12 @@ class StepikAPI:
             lessons[unit['id']] = unit['lesson']
 
         return list(lessons.values())
-    
+
     def get_steps_from_lessons(self, lessons):
         response = self._api_call_by_name('lessons', '?ids[]=' + ('&ids[]='.join([str(lesson) for lesson in lessons])))
         steps = {}
         for lesson in response['lessons']:
-            steps[lesson['id']] = {'title': lesson['title'], 
+            steps[lesson['id']] = {'title': lesson['title'],
                                    'steps': lesson['steps']}
 
         return steps
@@ -65,11 +66,11 @@ class StepikAPI:
         if response['attempts']:
             return response['attempts'][0]['dataset']
         else:
-            return []
+            return None
 
     def get_submissions_of_step(self, step, user_id=None):
         response = self._api_call_by_name('submissions', f'?step={step}&user={self.user_id}')
-        correct_sub = list(filter(lambda x : x['status'] == 'correct', response['submissions']))
+        correct_sub = list(filter(lambda x: x['status'] == 'correct', response['submissions']))
         if not correct_sub and 'meta' in response:
             has_next = response['meta']['has_next']
             page = 1
@@ -77,14 +78,16 @@ class StepikAPI:
                 response = self._api_call_by_name('submissions', f'?page={page}&step={step}&user={self.user_id}')
                 try:
                     has_next = response['meta']['has_next']
-                    correct_sub = list(filter(lambda x : x['status'] == 'correct', response['submissions']))
+                    correct_sub += list(filter(lambda x: x['status'] == 'correct', response['submissions']))
                 except:
                     return [{'reply': ''}]
                 page += 1
-        return correct_sub
-
+        return sorted(correct_sub, key=lambda x: x['time'], reverse=True)
 
     def convert_solution(self, info, solution):
+        if not solution or solution == [{'reply': ''}]:
+            return
+
         answer = solution[0]['reply']
         result = []
         if 'options' in info and 'choices' in answer:
@@ -106,11 +109,13 @@ class StepikAPI:
             result.append((None, answer['text']))
         elif 'answer' in answer:
             result.append((None, answer['answer']))
+        elif 'code' in answer:
+            result.append((None, answer['code']))
         elif not answer:
             result.append((None, "Not solved yet"))
 
         return result
-    
+
     def _parse_course_id(self, course):
         url = course
         regex = re.compile('[0-9]+');
@@ -123,7 +128,6 @@ class StepikAPI:
         # else return input course is url
         return id, url
 
-
     def _write_step(self, path, data):
         with open(path, 'w') as f:
             for d in data:
@@ -132,11 +136,9 @@ class StepikAPI:
                 else:
                     f.write(str(d[1]) + '\n')
 
-
     def dump_course(self, main_json):
         path = 'course_id{}'.format(self.course_id)
         os.mkdir(path)
-
 
         for section_id, section_info in main_json.items():
             title_section = section_info['title'].replace('/', ' ').replace(':', ' ').replace(' ', '_')
@@ -146,8 +148,8 @@ class StepikAPI:
                 os.mkdir(f"{path}/{title_section}/{unit_title}")
                 for step in list(unit.values())[0]['steps']:
                     if step['answer']:
-                        self._write_step(f"{path}/{title_section}/{unit_title}/" + str(step['num']) + '.txt', step['answer'])
-
+                        self._write_step(f"{path}/{title_section}/{unit_title}/" + str(step['num']) + '.txt',
+                                         step['answer'])
 
 
 def dump_json(json_, path):

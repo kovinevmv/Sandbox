@@ -38,7 +38,7 @@ class StepikGrabber:
                 for index_step, step in enumerate(steps_list, start=1):
                     print(f'Current step: {step}. Section: {index_section}/{len(units)}')
                     attempts = self.stepik_api.get_attempts_of_step(step)
-                    if attempts:
+                    if attempts is not None:
                         sub = self.stepik_api.get_submissions_of_step(step)
                         answer = self.stepik_api.convert_solution(attempts, sub)
                         self.main_json[section_id]['units'][index_of_l][lesson_id]['steps'].append({
