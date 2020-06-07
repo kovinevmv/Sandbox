@@ -139,10 +139,10 @@ class StepikAPI:
 
 
         for section_id, section_info in main_json.items():
-            title_section = section_info['title']
+            title_section = section_info['title'].replace('/', ' ').replace(':', ' ').replace(' ', '_')
             os.mkdir(f"{path}/{title_section}")
             for unit in section_info['units']:
-                unit_title = list(unit.values())[0]['title'].replace('/', '|')
+                unit_title = list(unit.values())[0]['title'].replace('/', ' ').replace(':', ' ').replace(' ', '_')
                 os.mkdir(f"{path}/{title_section}/{unit_title}")
                 for step in list(unit.values())[0]['steps']:
                     if step['answer']:
